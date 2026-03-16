@@ -4,6 +4,7 @@ import com.flip.models.Category
 import com.flip.models.CreateProductRequest
 import com.flip.models.ErrorResponse
 import com.flip.models.UpdateProductRequest
+import com.flip.services.ModelGenerationService
 import com.flip.services.ProductService
 import com.flip.storage.FileStorage
 import io.ktor.http.*
@@ -12,6 +13,9 @@ import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import io.ktor.util.*
+
+val ModelGenerationServiceKey = AttributeKey<ModelGenerationService>("ModelGenerationService")
 
 fun Route.productRoutes(service: ProductService, fileStorage: FileStorage) {
     route("/models") {
@@ -78,6 +82,19 @@ fun Route.productRoutes(service: ProductService, fileStorage: FileStorage) {
                 }
 
                 val updated = service.attachModel(id, bytes)
+                call.respond(updated)
+            }
+
+            // POST /models/{id}/generate-model  — trigger AI model generation
+            post("/generate-model") {
+                val id = call.parameters["id"]!!
+                val genService = call.application.attributes.getOrNull(ModelGenerationServiceKey)
+                    ?: run {
+                        call.respond(HttpStatusCode.ServiceUnavailable,
+                            ErrorResponse("THREEDAI_API_KEY not configured"))
+                        return@post
+                    }
+                val updated = genService.generateModel(id)
                 call.respond(updated)
             }
 

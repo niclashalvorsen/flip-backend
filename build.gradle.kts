@@ -36,6 +36,11 @@ dependencies {
     implementation("com.zaxxer:HikariCP:5.1.0")
     implementation("org.flywaydb:flyway-core:9.22.3")
 
+    // HTTP client (for 3DAI Studio API calls)
+    implementation("io.ktor:ktor-client-core-jvm:$ktorVersion")
+    implementation("io.ktor:ktor-client-cio-jvm:$ktorVersion")
+    implementation("io.ktor:ktor-client-content-negotiation-jvm:$ktorVersion")
+
     // HTML scraping
     implementation("org.jsoup:jsoup:1.17.2")
 
