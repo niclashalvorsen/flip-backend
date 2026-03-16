@@ -15,6 +15,7 @@ object Products : Table("products") {
     val heightCm     = decimal("height_cm", 8, 2).default(0.toBigDecimal())
     val depthCm      = decimal("depth_cm", 8, 2).default(0.toBigDecimal())
     val modelKey     = varchar("model_key", 500).nullable()
+    val imageUrl     = text("image_url").nullable()
     val createdAt    = timestampWithTimeZone("created_at")
     val updatedAt    = timestampWithTimeZone("updated_at")
 

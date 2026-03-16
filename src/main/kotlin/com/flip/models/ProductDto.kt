@@ -16,6 +16,7 @@ data class ProductDto(
     val depthCm: Double,
     val modelKey: String?,
     val hasModel: Boolean,
+    val imageUrl: String?,
     val createdAt: String,
     val updatedAt: String,
 )
@@ -51,6 +52,9 @@ data class ProductListResponse(
     val page: Int,
     val size: Int,
 )
+
+@Serializable
+data class ImportRequest(val url: String)
 
 @Serializable
 data class ErrorResponse(val message: String)

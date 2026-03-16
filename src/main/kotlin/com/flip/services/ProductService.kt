@@ -132,6 +132,7 @@ class ProductService(private val fileStorage: FileStorage) {
         depthCm = this[Products.depthCm].toDouble(),
         modelKey = this[Products.modelKey],
         hasModel = this[Products.modelKey] != null,
+        imageUrl = this[Products.imageUrl],
         createdAt = this[Products.createdAt].toString(),
         updatedAt = this[Products.updatedAt].toString(),
     )

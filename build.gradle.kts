@@ -36,6 +36,9 @@ dependencies {
     implementation("com.zaxxer:HikariCP:5.1.0")
     implementation("org.flywaydb:flyway-core:9.22.3")
 
+    // HTML scraping
+    implementation("org.jsoup:jsoup:1.17.2")
+
     // Logging
     implementation("ch.qos.logback:logback-classic:1.4.14")
 
