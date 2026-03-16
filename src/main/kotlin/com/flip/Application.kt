@@ -7,6 +7,7 @@ import com.flip.plugins.configureStatusPages
 import com.flip.storage.LocalFileStorage
 import io.ktor.server.application.*
 import io.ktor.server.netty.*
+import kotlinx.coroutines.launch
 
 fun main(args: Array<String>): Unit = EngineMain.main(args)
 
@@ -18,4 +19,6 @@ fun Application.module() {
     configureStatusPages()
     configureDatabase()
     configureRouting(fileStorage)
+
+    launch { seedModelFiles(fileStorage) }
 }
