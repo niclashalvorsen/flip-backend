@@ -17,7 +17,7 @@ repositories {
 }
 
 val ktorVersion = "2.3.12"
-val exposedVersion = "0.44.1"
+val exposedVersion = "0.52.0"
 
 dependencies {
     // Ktor server
@@ -31,7 +31,7 @@ dependencies {
     // Database
     implementation("org.jetbrains.exposed:exposed-core:$exposedVersion")
     implementation("org.jetbrains.exposed:exposed-jdbc:$exposedVersion")
-    implementation("org.jetbrains.exposed:exposed-kotlin-datetime:$exposedVersion")
+    implementation("org.jetbrains.exposed:exposed-java-time:$exposedVersion")
     implementation("org.postgresql:postgresql:42.7.2")
     implementation("com.zaxxer:HikariCP:5.1.0")
     implementation("org.flywaydb:flyway-core:9.22.3")

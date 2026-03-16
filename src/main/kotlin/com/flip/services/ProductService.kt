@@ -6,7 +6,6 @@ import com.flip.storage.FileStorage
 import kotlinx.coroutines.Dispatchers
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
-import org.jetbrains.exposed.sql.kotlin.datetime.timestampWithTimeZone
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import java.time.OffsetDateTime
 import java.util.UUID
@@ -19,23 +18,22 @@ class ProductService(private val fileStorage: FileStorage) {
         page: Int,
         size: Int,
     ): ProductListResponse = dbQuery {
-        var condition: Op<Boolean> = Op.TRUE
-
-        if (!query.isNullOrBlank()) {
-            val q = "%${query.lowercase()}%"
-            condition = condition and (
-                (Products.name.lowerCase() like q) or
-                (Products.companyName.lowerCase() like q)
-            )
+        val base = Products.selectAll().where {
+            val parts = mutableListOf<Op<Boolean>>()
+            if (!query.isNullOrBlank()) {
+                val q = "%${query.lowercase()}%"
+                parts += (Products.name.lowerCase() like q) or
+                         (Products.companyName.lowerCase() like q)
+            }
+            if (category != null) {
+                parts += Products.category eq category.name
+            }
+            parts.reduceOrNull { a, b -> a and b } ?: Op.TRUE
         }
-        if (category != null) {
-            condition = condition and (Products.category eq category.name)
-        }
 
-        val total = Products.selectAll().where(condition).count()
-        val items = Products.selectAll()
-            .where(condition)
-            .orderBy(Products.name)
+        val total = base.count()
+        val items = base
+            .orderBy(Products.name to SortOrder.ASC)
             .limit(size, offset = (page * size).toLong())
             .map { it.toDto() }
 
@@ -51,8 +49,11 @@ class ProductService(private val fileStorage: FileStorage) {
     }
 
     suspend fun create(req: CreateProductRequest): ProductDto = dbQuery {
+        val newId = UUID.randomUUID()
         val now = OffsetDateTime.now()
-        val id = Products.insert {
+
+        Products.insert {
+            it[id] = newId
             it[companyName] = req.companyName
             it[category] = req.category.name
             it[name] = req.name
@@ -63,10 +64,10 @@ class ProductService(private val fileStorage: FileStorage) {
             it[depthCm] = req.depthCm.toBigDecimal()
             it[createdAt] = now
             it[updatedAt] = now
-        }[Products.id]
+        }
 
         Products.selectAll()
-            .where { Products.id eq id }
+            .where { Products.id eq newId }
             .single()
             .toDto()
     }
@@ -92,32 +93,30 @@ class ProductService(private val fileStorage: FileStorage) {
             .toDto()
     }
 
-    suspend fun attachModel(id: String, bytes: ByteArray): ProductDto = dbQuery {
+    suspend fun attachModel(id: String, bytes: ByteArray): ProductDto {
         val uuid = UUID.fromString(id)
-        val existing = Products.selectAll()
-            .where { Products.id eq uuid }
-            .singleOrNull()
-            ?: throw NoSuchElementException("Product $id not found")
+        val (key, dto) = dbQuery {
+            val existing = Products.selectAll()
+                .where { Products.id eq uuid }
+                .singleOrNull()
+                ?: throw NoSuchElementException("Product $id not found")
 
-        val newVersion = existing[Products.modelVersion] + 1
-        val key = "models/$id/v$newVersion.usdz"
+            val newVersion = existing[Products.modelVersion] + 1
+            val key = "models/$id/v$newVersion.usdz"
 
-        // Store outside the transaction (I/O), then update DB
-        // We run in a coroutine so use runBlocking bridge via suspend caller
-        Products.update({ Products.id eq uuid }) {
-            it[modelKey] = key
-            it[modelVersion] = newVersion
-            it[updatedAt] = OffsetDateTime.now()
+            Products.update({ Products.id eq uuid }) {
+                it[modelKey] = key
+                it[modelVersion] = newVersion
+                it[updatedAt] = OffsetDateTime.now()
+            }
+
+            key to Products.selectAll()
+                .where { Products.id eq uuid }
+                .single()
+                .toDto()
         }
-
-        // Return the key so the route can store the bytes after commit
-        key to Products.selectAll()
-            .where { Products.id eq uuid }
-            .single()
-            .toDto()
-    }.let { (key, dto) ->
         fileStorage.store(key, bytes)
-        dto
+        return dto
     }
 
     private fun ResultRow.toDto() = ProductDto(

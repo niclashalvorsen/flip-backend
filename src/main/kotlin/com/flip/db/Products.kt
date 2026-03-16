@@ -1,7 +1,7 @@
 package com.flip.db
 
 import org.jetbrains.exposed.sql.Table
-import org.jetbrains.exposed.sql.kotlin.datetime.timestampWithTimeZone
+import org.jetbrains.exposed.sql.javatime.timestampWithTimeZone
 
 object Products : Table("products") {
     val id           = uuid("id").autoGenerate()

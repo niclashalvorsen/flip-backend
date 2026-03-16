@@ -5,6 +5,7 @@ import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.plugins.statuspages.*
 import io.ktor.server.response.*
+import io.ktor.server.application.*
 
 fun Application.configureStatusPages() {
     install(StatusPages) {
@@ -15,7 +16,7 @@ fun Application.configureStatusPages() {
             call.respond(HttpStatusCode.NotFound, ErrorResponse(cause.message ?: "Not found"))
         }
         exception<Throwable> { call, cause ->
-            application.log.error("Unhandled error", cause)
+            call.application.log.error("Unhandled error", cause)
             call.respond(HttpStatusCode.InternalServerError, ErrorResponse("Internal server error"))
         }
     }
